@@ -48,7 +48,7 @@ def auto_canny(image, sigma=0.33):
 
 
 # Move the servo back and forth
-count = int(sys.argv[1])
+count = 0
 # for folder in os.listdir("images/All/"):
 #     count+=len(os.listdir("images/All/" + folder + "/uncroppedImages"))
 
@@ -122,23 +122,28 @@ while not empty:
 
       top_k = results.argsort()[-5:][::-1]
       labels = load_labels('models/modelEdgeDetectionResized/dict.txt')
-      for i in top_k:
-           if floating_model:
-                print('{:08.6f}: {}'.format(float(results[i]), labels[i]))
-           else:
-                print('{:08.6f}: {}'.format(float(results[i] / 255.0), labels[i]))
-      print('\n')
+      #for i in top_k:
+           #if floating_model:
+               # print('{:08.6f}: {}'.format(float(results[i]), labels[i]))
+           #else:
+                #print('{:08.6f}: {}'.format(float(results[i] / 255.0), labels[i]))
+      #print('\n')
 
       prediction = labels[top_k[0]]
-      cv2.imwrite("images/All/uncroppedImages/picture" + str(count) + ".jpeg",image)
-      cv2.imwrite("images/All/edgeDetectionUncroppedImages/picture" + str(count) + ".jpeg",edgeDetectionUncroppedImage)
-      cv2.imwrite("images/All/edgeDetectionCroppedImages/picture" + str(count) + ".jpeg",edgeDetectionCroppedImage)
-      cv2.imwrite("images/All/edgeDetectionResizedImages/picture" + str(count) + ".jpeg",edgeDetectionResizedImage)
+      predictionResult = results[top_k[0]]
       
-      cv2.imwrite("images/All/" + prediction + "/uncroppedImages/picture" + str(count) + ".jpeg",image)
-      cv2.imwrite("images/All/" + prediction + "/edgeDetectionUncroppedImages/picture" + str(count) + ".jpeg",edgeDetectionUncroppedImage)
-      cv2.imwrite("images/All/" + prediction + "/edgeDetectionCroppedImages/picture" + str(count) + ".jpeg",edgeDetectionCroppedImage)
-      cv2.imwrite("images/All/" + prediction + "/edgeDetectionResizedImages/picture" + str(count) + ".jpeg",edgeDetectionResizedImage)
+      print(prediction + ": " + str(predictionResult/255.0))
+      if (prediction == "empty"):
+          empty = True
+      #cv2.imwrite("images/All/uncroppedImages/picture" + str(count) + ".jpeg",image)
+      #cv2.imwrite("images/All/edgeDetectionUncroppedImages/picture" + str(count) + ".jpeg",edgeDetectionUncroppedImage)
+      #cv2.imwrite("images/All/edgeDetectionCroppedImages/picture" + str(count) + ".jpeg",edgeDetectionCroppedImage)
+      #cv2.imwrite("images/All/edgeDetectionResizedImages/picture" + str(count) + ".jpeg",edgeDetectionResizedImage)
+      
+      #cv2.imwrite("images/All/" + prediction + "/uncroppedImages/picture" + str(count) + ".jpeg",image)
+      #cv2.imwrite("images/All/" + prediction + "/edgeDetectionUncroppedImages/picture" + str(count) + ".jpeg",edgeDetectionUncroppedImage)
+      #cv2.imwrite("images/All/" + prediction + "/edgeDetectionCroppedImages/picture" + str(count) + ".jpeg",edgeDetectionCroppedImage)
+      #cv2.imwrite("images/All/" + prediction + "/edgeDetectionResizedImages/picture" + str(count) + ".jpeg",edgeDetectionResizedImage)
       
       print(count)
 
@@ -157,3 +162,4 @@ while not empty:
 # Clean up everything
 p.stop()                 # At the end of the program, stop the PWM
 GPIO.cleanup()           # Resets the GPIO pins back to defaults
+
