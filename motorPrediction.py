@@ -27,7 +27,7 @@ import sys
 GPIO.setmode(GPIO.BOARD) # Sets the pin numbering system to use the physical layout
 
 camera = PiCamera()
-camera.color_effects = (128,128)
+# camera.color_effects = (128,128)
 
 # Set up pin 11 for PWM
 GPIO.setup(11,GPIO.OUT)  # Sets up pin 11 to an output (instead of an input)
@@ -59,9 +59,22 @@ currAngle = 0
 
 print(count)
 
-empty = False
+empty = 0
 
 if __name__ == '__main__':
+    interpreter = tflite.Interpreter(model_path='models/modelEdgeDetectionResized/model.tflite')
+    interpreter.allocate_tensors()
+
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    # check the type of the input tensor
+    floating_model = input_details[0]['dtype'] == np.float32
+
+    # NxHxWxC, H:1, W:2
+    height = input_details[0]['shape'][1]
+    width = input_details[0]['shape'][2]
+
     ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1) # Set /dev/ttyACMO to location of Arduino
     ser.flush()
 
@@ -73,7 +86,7 @@ if __name__ == '__main__':
     line = ser.readline().decode('utf-8').rstrip()
     print(line)
 
-while not empty:
+while empty < 2:
     p.ChangeDutyCycle(3)     # Changes the pulse width to 3 (so moves the servo)
     sleep(2)                 # Wait 1 second
     for i in range(1000):
@@ -82,20 +95,6 @@ while not empty:
     camera.capture('picture.jpeg')
 
     if __name__ == '__main__':
-
-      interpreter = tflite.Interpreter(model_path='models/modelEdgeDetectionResized/model.tflite')
-      interpreter.allocate_tensors()
-
-      input_details = interpreter.get_input_details()
-      output_details = interpreter.get_output_details()
-
-      # check the type of the input tensor
-      floating_model = input_details[0]['dtype'] == np.float32
-
-      # NxHxWxC, H:1, W:2
-      height = input_details[0]['shape'][1]
-      width = input_details[0]['shape'][2]
-
       # print(width)
       # print(height)
 
@@ -148,20 +147,27 @@ while not empty:
       #print('\n')
 
       prediction = labels[top_k[0]]
-      predictionResult = results[top_k[0]]
+      predictionResult = results[top_k[0]]/255.0
 
-      print(prediction + ": " + str(predictionResult/255.0))
+      print(prediction + ": " + str(predictionResult))
 
       angle = currAngle
-
-      if (prediction == "empty"):
-          empty = True
-          angle = 0 - currAngle
-          currAngle = 0
-      elif (prediction == "thread_size_8_32"): # Position = 0
-          angle = 0 - currAngle
-          currAngle = 0
-      elif (prediction == "thread_size_10_32"): # Position = 90
+      
+      if (predictionResult > 0.7):
+          if (prediction == "empty"):
+              empty+=1
+              angle = 0 - currAngle
+              currAngle = 0
+          elif (prediction == "thread_size_8_32"): # Position = 0
+              empty = 0
+              angle = 0 - currAngle
+              currAngle = 0
+          elif (prediction == "thread_size_10_32"): # Position = 90
+              empty = 0
+              angle = 180 - currAngle
+              currAngle = 180
+      else:
+          empty = 0
           angle = 90 - currAngle
           currAngle = 90
       
